@@ -1,0 +1,74 @@
+name: Check
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  test_amd64:
+    name: Test (amd64)
+    runs-on: ubuntu-latest
+    env:
+      VMODULES: /tmp/vmodules
+      VCACHE: /tmp/vcache
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install base deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends --no-install-suggests \
+            build-essential git ca-certificates file
+
+      - name: Install V
+        run: |
+          git clone --depth=1 https://github.com/vlang/v /opt/v
+          make -C /opt/v
+          sudo /opt/v/v symlink
+
+      - name: Run tests (amd64)
+        run: |
+          v test .
+
+  test_i386:
+    name: Test (i386)
+    runs-on: ubuntu-latest
+    env:
+      VMODULES: /tmp/vmodules
+      VCACHE: /tmp/vcache
+      VFLAGS: -keepc -cc i686-linux-gnu-gcc -prod -m32 -arch i386 -cflags -mmmx -w -gc none
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install base deps
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends --no-install-suggests \
+            build-essential git ca-certificates file
+
+      - name: Enable i386 arch
+        run: |
+          sudo dpkg --add-architecture i386
+          sudo apt-get update
+
+      - name: Install i386 toolchain and libs
+        run: |
+          sudo apt-get install -y --no-install-recommends --no-install-suggests \
+            crossbuild-essential-i386 \
+            libc6:i386 \
+            libgcc-s1:i386 \
+            libstdc++6:i386
+
+      - name: Install V
+        run: |
+          git clone --depth=1 https://github.com/vlang/v /opt/v
+          make -C /opt/v
+          sudo /opt/v/v symlink
+
+      - name: Run tests (i386)
+        run: |
+          v test .

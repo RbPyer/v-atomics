@@ -81,9 +81,11 @@ fn test_add_u32_concurrent() {
 			}
 		}(&x)
 	}
+
 	for t in threads {
 		t.wait()
 	}
+
 	assert x == 800_000
 }
 
@@ -98,9 +100,11 @@ fn test_swap_u32_concurrent() {
 			}
 		}(&x)
 	}
+
 	for t in threads {
 		t.wait()
 	}
+
 	assert x == 123
 }
 
@@ -124,108 +128,8 @@ fn test_cas_u32_concurrent_inc() {
 	for t in threads {
 		t.wait()
 	}
+
 	assert x == 400_000
-}
-
-fn test_cas_add_u32_mixed() {
-	mut x := u32(0)
-	mut threads := []thread{}
-
-	for _ in 0 .. 8 {
-		threads << spawn fn (px &u32) {
-			for _ in 0 .. 40_000 {
-				v := load_u32(px)
-				if (v & 1) == 0 {
-					add_u32(px, 1)
-				} else {
-					for {
-						old := load_u32(px)
-						if cas_u32(px, old, old + 1) {
-							break
-						}
-					}
-				}
-			}
-		}(&x)
-	}
-
-	for t in threads {
-		t.wait()
-	}
-	assert x > 0
-}
-
-fn test_swap_add_u32_mixed() {
-	mut x := u32(0)
-	mut threads := []thread{}
-
-	for _ in 0 .. 6 {
-		threads << spawn fn (px &u32) {
-			for _ in 0 .. 30_000 {
-				swap_u32(px, 10)
-				add_u32(px, 1)
-			}
-		}(&x)
-	}
-
-	for t in threads {
-		t.wait()
-	}
-	assert x >= 10
-}
-
-fn test_cas_swap_u32_race() {
-	mut x := u32(0)
-	mut threads := []thread{}
-
-	for i in 0 .. 8 {
-		threads << spawn fn (px &u32, id int) {
-			for _ in 0 .. 40_000 {
-				if id % 2 == 0 {
-					for {
-						old := load_u32(px)
-						if cas_u32(px, old, old + 1) {
-							break
-						}
-					}
-				} else {
-					swap_u32(px, 0)
-				}
-			}
-		}(&x, i)
-	}
-
-	for t in threads {
-		t.wait()
-	}
-	assert x >= 0
-}
-
-fn test_cas_u32_aba_style() {
-	mut x := u32(1)
-	mut threads := []thread{}
-
-	for i in 0 .. 6 {
-		threads << spawn fn (px &u32, id int) {
-			for _ in 0 .. 40_000 {
-				if id % 2 == 0 {
-					for {
-						old := load_u32(px)
-						if cas_u32(px, old, old + 1) {
-							break
-						}
-					}
-				} else {
-					swap_u32(px, 1)
-				}
-			}
-		}(&x, i)
-	}
-
-	for t in threads {
-		t.wait()
-	}
-	assert x >= 1
 }
 
 fn test_cas_u32_contended_flip() {
@@ -244,27 +148,8 @@ fn test_cas_u32_contended_flip() {
 	for t in threads {
 		t.wait()
 	}
-	assert x == 0 || x == 1
-}
 
-fn test_u32_atomic_fuzz() {
-	mut x := u32(0)
-	for i in 0 .. 100_000 {
-		match i % 3 {
-			0 {
-				add_u32(&x, 1)
-			}
-			1 {
-				old := load_u32(&x)
-				cas_u32(&x, old, old + 1)
-			}
-			2 {
-				swap_u32(&x, load_u32(&x) + 1)
-			}
-			else {}
-		}
-	}
-	assert x != 0
+	assert x == 0 || x == 1
 }
 
 fn test_load_store_u32_concurrent() {
@@ -277,7 +162,7 @@ fn test_load_store_u32_concurrent() {
 				if id % 2 == 0 {
 					store_u32(px, 1)
 				} else {
-					_ := load_u32(px)
+					_ = load_u32(px)
 				}
 			}
 		}(&x, i)

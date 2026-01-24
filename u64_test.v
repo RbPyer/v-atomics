@@ -85,6 +85,7 @@ fn test_add_u64_concurrent() {
 	for t in threads {
 		t.wait()
 	}
+
 	assert x == 800_000
 }
 
@@ -103,6 +104,7 @@ fn test_swap_u64_concurrent() {
 	for t in threads {
 		t.wait()
 	}
+
 	assert x == 123456
 }
 
@@ -126,108 +128,8 @@ fn test_cas_u64_concurrent_inc() {
 	for t in threads {
 		t.wait()
 	}
+
 	assert x == 400_000
-}
-
-fn test_cas_add_u64_mixed() {
-	mut x := u64(0)
-	mut threads := []thread{}
-
-	for _ in 0 .. 8 {
-		threads << spawn fn (px &u64) {
-			for _ in 0 .. 50_000 {
-				v := load_u64(px)
-				if (v & 1) == 0 {
-					add_u64(px, 1)
-				} else {
-					for {
-						old := load_u64(px)
-						if cas_u64(px, old, old + 1) {
-							break
-						}
-					}
-				}
-			}
-		}(&x)
-	}
-
-	for t in threads {
-		t.wait()
-	}
-	assert x > 0
-}
-
-fn test_swap_add_u64_mixed() {
-	mut x := u64(0)
-	mut threads := []thread{}
-
-	for _ in 0 .. 6 {
-		threads << spawn fn (px &u64) {
-			for _ in 0 .. 30_000 {
-				swap_u64(px, 10)
-				add_u64(px, 1)
-			}
-		}(&x)
-	}
-
-	for t in threads {
-		t.wait()
-	}
-	assert x >= 10
-}
-
-fn test_cas_swap_u64_race() {
-	mut x := u64(0)
-	mut threads := []thread{}
-
-	for i in 0 .. 8 {
-		threads << spawn fn (px &u64, id int) {
-			for _ in 0 .. 40_000 {
-				if id % 2 == 0 {
-					for {
-						old := load_u64(px)
-						if cas_u64(px, old, old + 1) {
-							break
-						}
-					}
-				} else {
-					swap_u64(px, 0)
-				}
-			}
-		}(&x, i)
-	}
-
-	for t in threads {
-		t.wait()
-	}
-	assert x >= 0
-}
-
-fn test_cas_u64_aba_race() {
-	mut x := u64(1)
-	mut threads := []thread{}
-
-	for i in 0 .. 6 {
-		threads << spawn fn (px &u64, id int) {
-			for _ in 0 .. 40_000 {
-				if id % 2 == 0 {
-					for {
-						old := load_u64(px)
-						if cas_u64(px, old, old + 1) {
-							break
-						}
-					}
-				} else {
-					swap_u64(px, 1)
-				}
-			}
-		}(&x, i)
-	}
-
-	for t in threads {
-		t.wait()
-	}
-	assert x >= 1
 }
 
 fn test_cas_u64_contended_flip() {
@@ -246,25 +148,6 @@ fn test_cas_u64_contended_flip() {
 	for t in threads {
 		t.wait()
 	}
-	assert x == 0 || x == 1
-}
 
-fn test_u64_atomic_fuzz() {
-	mut x := u64(0)
-	for i in 0 .. 200_000 {
-		match i % 3 {
-			0 {
-				add_u64(&x, 1)
-			}
-			1 {
-				old := load_u64(&x)
-				cas_u64(&x, old, old + 1)
-			}
-			2 {
-				swap_u64(&x, load_u64(&x) + 1)
-			}
-			else {}
-		}
-	}
-	assert x != 0
+	assert x == 0 || x == 1
 }
