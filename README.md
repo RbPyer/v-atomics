@@ -56,3 +56,56 @@ All operations in this library are intended to be **sequentially consistent**:
 - operations appear to be globally ordered;
 - no weaker semantics (relaxed, acquire, release) are currently implemented;
 - when weaker variants are added in the future, they will be explicitly named and documented.
+
+---
+
+## Examples
+
+See the [examples](examples/) directory for complete runnable examples.
+
+### Basic Usage
+
+```v
+import atomics
+
+fn main() {
+    mut value := i32(0)
+
+    // Atomically store a value
+    atomics.store_i32(&value, 42)
+
+    // Atomically load the value
+    loaded := atomics.load_i32(&value)
+
+    // Atomic add: returns the new value after addition
+    new_value := atomics.add_i32(&value, 10)
+
+    // Atomic swap: returns the old value
+    old := atomics.swap_i32(&value, 100)
+}
+```
+
+### Compare-and-Swap (CAS)
+
+```v
+import atomics
+
+fn main() {
+    mut flag := u32(0)
+
+    // CAS: if flag == 0, set it to 1; returns true on success
+    if atomics.cas_u32(&flag, 0, 1) {
+        println('Successfully changed flag from 0 to 1')
+    }
+}
+```
+
+### Available Operations
+
+| Operation | i32 | i64 | u32 | u64 |
+|-----------|-----|-----|-----|-----|
+| `load_*`  | yes | yes | yes | yes |
+| `store_*` | yes | yes | yes | yes |
+| `add_*`   | yes | yes | yes | yes |
+| `swap_*`  | yes | yes | yes | yes |
+| `cas_*`   | yes | yes | yes | yes |
