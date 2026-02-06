@@ -437,7 +437,7 @@ pub fn cas_i64(addr &i64, old i64, new i64) bool {
 		2:
 			;=r(swapped)
 			;r(addr) r(old) r(new)
-			; rax rcx rdx al
+			; rax rcx rdx
 			  memory
 		}
 	} $else {
@@ -458,7 +458,7 @@ pub fn cas_i64(addr &i64, old i64, new i64) bool {
 		2:
 			;=r(swapped)
 			;r(addr) r(old) r(new)
-			; rax rcx rdx al
+			; rax rcx rdx
 			  memory
 		}
 	}
